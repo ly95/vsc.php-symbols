@@ -256,6 +256,7 @@ export class Scanner {
                     if (bit == '{') {
                         let find = this.lexerBackwardLookup(regExp.CLASS);
                         if (find.length >= 1) {
+                            find.pop();
                             let item = find.pop();
                             this.pushCodeSymbols(item, tokenEnum.T_CLASS);
                         }

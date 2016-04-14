@@ -1,0 +1,38 @@
+{
+    "name": "php-symbols",
+    "displayName": "php-symbols",
+    "description": "support php symbols",
+    "version": "0.0.1",
+    "publisher": "linyang95",
+    "author": "Yang Lin",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "homepage": "https://github.com/ly95/vsc.php-symbols",
+    "icon": "images/icon.svg",
+    "bugs": {
+        "url": "https://github.com/ly95/vsc.php-symbols/issues",
+        "email": "linyang95@aol.com"
+    },
+    "engines": {
+        "vscode": "^0.10.10"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "keywords": [
+        "symbols",
+        "php"
+    ],
+    "activationEvents": [
+        "onLanguage:php"
+    ],
+    "main": "./out/src/extension",
+    "scripts": {
+        "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+        "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "devDependencies": {
+        "typescript": "^1.8.5",
+        "vscode": "^0.11.0"
+    }
+}

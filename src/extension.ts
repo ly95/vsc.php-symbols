@@ -9,7 +9,7 @@ import {Scanner, tokenEnum} from './scanner';
 
 class PHPDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
     public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-        return new Promise(function(resolve) {
+        return new Promise(function (resolve) {
             let uri = vscode.Uri.parse(document.uri.toString());
             new Scanner(uri.path, (sombols) => {
                 let data: vscode.SymbolInformation[] = [];
@@ -27,12 +27,22 @@ class PHPDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
                         default:
                             continue;
                     }
-                    let range = new vscode.Range(new vscode.Position(item.lineNo - 1, 0), new vscode.Position(item.lineNo - 1, Number.MAX_VALUE));
-                    data.push(new vscode.SymbolInformation(item.text, type, range, undefined));
+
+                    let lineNo = item.lineNo - 1;
+                    let start = Math.max(0, item.start - 1);
+                    let end = Math.max(0, item.end - 1);
+
+                    let range = new vscode.Range(
+                        new vscode.Position(lineNo, start),
+                        new vscode.Position(lineNo, end)
+                    );
+                    data.push(
+                        new vscode.SymbolInformation(item.text, type, range)
+                    );
                 }
                 resolve(data);
             });
-        }).then(function(value) {
+        }).then(function (value) {
             return value;
         });
     }

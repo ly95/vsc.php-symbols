@@ -50,6 +50,7 @@ interface lexer {
     text: string,
     type: lexerEnum,
     lineNo: number,
+    col: number,
     level: number
 }
 
@@ -57,6 +58,8 @@ interface codeSymbol {
     text: string,
     type: tokenEnum,
     lineNo: number,
+    start: number,
+    end: number,
     level: number
 }
 
@@ -69,6 +72,7 @@ export class Scanner {
     lexerStack: lexer[];
     codeSymbols: codeSymbol[];
     lineNo: number;
+    column: number;
     level: number;
 
     init() {
@@ -78,6 +82,7 @@ export class Scanner {
         this.lexerStack = [];
         this.codeSymbols = [];
         this.lineNo = 1;
+        this.column = 0;
         this.level = 0;
 
         this.setState(stateEnum.INITIAL);
@@ -112,7 +117,7 @@ export class Scanner {
         readable.on('end', () => {
             callback(this.codeSymbols);
             // console.log(this.lexerStack.length);
-            // console.log(this.codeSymbols);
+            // console.log(JSON.stringify(this.codeSymbols));
             // console.log(this.expectTokenStack);
             // console.log(this.stateStack);
             // console.log(process.memoryUsage());
@@ -148,6 +153,7 @@ export class Scanner {
             text: this.text,
             lineNo: this.lineNo,
             type: type,
+            col: this.column,
             level: this.level
         });
     }
@@ -156,25 +162,32 @@ export class Scanner {
         this.codeSymbols.push({
             text: l.text,
             lineNo: l.lineNo,
+            start: Math.max(0, l.col - l.text.length),
+            end: l.col,
             type: type,
             level: l.level
         });
     }
 
     scan(bit: string) {
+        this.column++;
+
         if (/\r/.test(bit)) return;
 
-        if (/\n/.test(bit)) {
+        else if (/\n/.test(bit)) {
+            if (regExp.LABEL.test(this.text)) {
+                this.pushLexerStack(lexerEnum.LABEL);
+            }
             // this.debug(this.text);
             this.lineNo++;
+            this.column = 0;
             this.text = NIL;
             return;
         }
 
         // --- lexer
-
-        if (this.isState(stateEnum.IN_SCRIPTING)) {
-            if (bit == ' ' || /\t/.test(bit)) {
+        else if (this.isState(stateEnum.IN_SCRIPTING)) {
+            if (bit == ' ' || /[\t\n]/.test(bit)) {
 
                 if (regExp.FUNCTION.test(this.text)) this.pushExpectToken(tokenEnum.T_FUNCTION);
                 if (regExp.CLASS.test(this.text)) this.pushExpectToken(tokenEnum.T_CLASS);
@@ -231,8 +244,11 @@ export class Scanner {
 
         if (this.isState(stateEnum.DOUBLE_QUOTES)) return;
 
-        // --- parser
+        this.parser();
+    }
 
+    parser() {
+        let bit = this.text.substring(this.text.length - 1);
         let pos = 0;
         let len = this.expectTokenStack.length;
         let tmpExpectTokenStack = this.expectTokenStack;
@@ -283,6 +299,7 @@ export class Scanner {
         } // while
 
         this.expectTokenStack = tmpExpectTokenStack;
+        tmpExpectTokenStack = null;
     }
 
     lexerBackwardLookup(regexp: RegExp): lexer[] {

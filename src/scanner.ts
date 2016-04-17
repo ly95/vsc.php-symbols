@@ -11,7 +11,7 @@ const NIL = '';
 const regExp = {
     LABEL: /[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/,
     TOKENS: /[;:,.\[\]()|^&+-/*=%!~$<>?@]/,
-    NEWLINE: /("\r"|"\n"|"\r\n")/,
+    NEWLINE: /(\r|\n|\r\n)/,
     TABS_AND_SPACES: /[ \t]*/,
     WHITESPACE: /[ \n\r\t]+/,
     FUNCTION: /^(function)$/i,
@@ -118,7 +118,7 @@ export class Scanner {
             callback(this.codeSymbols);
             // console.log(this.lexerStack.length);
             // console.log(JSON.stringify(this.codeSymbols));
-            // console.log(this.expectTokenStack);
+            // console.log(JSON.stringify(this.expectTokenStack));
             // console.log(this.stateStack);
             // console.log(process.memoryUsage());
         });
@@ -149,6 +149,7 @@ export class Scanner {
     }
 
     pushLexerStack(type: lexerEnum) {
+        // this.debug("pushLexerStack: " + this.text);
         this.lexerStack.push({
             text: this.text,
             lineNo: this.lineNo,
@@ -156,6 +157,32 @@ export class Scanner {
             col: this.column,
             level: this.level
         });
+
+        let temp = this.expectTokenStack;
+        let find: lexer;
+
+        this.expectTokenStack.forEach((v, i) => {
+            switch (v) {
+                case tokenEnum.T_CLASS:
+                case tokenEnum.T_FUNCTION:
+                    find = this.lexerStack[this.lexerStack.length - 1];
+                    this.pushCodeSymbols(find, v);
+                    temp = temp.slice(i + 1, 1);
+                    break;
+                default:
+                    break;
+            }
+        });
+        this.expectTokenStack = temp;
+
+        switch (this.text.toLowerCase()) {
+            case 'function':
+                if (this.isState(stateEnum.IN_SCRIPTING)) this.pushExpectToken(tokenEnum.T_FUNCTION);
+                break;
+            case 'class':
+                if (this.isState(stateEnum.IN_SCRIPTING)) this.pushExpectToken(tokenEnum.T_CLASS);
+                break;
+        }
     }
 
     pushCodeSymbols(l: lexer, type: tokenEnum) {
@@ -172,149 +199,77 @@ export class Scanner {
     scan(bit: string) {
         this.column++;
 
-        if (/\r/.test(bit)) return;
-
-        else if (/\n/.test(bit)) {
-            if (regExp.LABEL.test(this.text)) {
-                this.pushLexerStack(lexerEnum.LABEL);
-            }
-            // this.debug(this.text);
-            this.lineNo++;
-            this.column = 0;
-            this.text = NIL;
-            return;
-        }
-
-        // --- lexer
-        else if (this.isState(stateEnum.IN_SCRIPTING)) {
-            if (bit == ' ' || /[\t\n]/.test(bit)) {
-
-                if (regExp.FUNCTION.test(this.text)) this.pushExpectToken(tokenEnum.T_FUNCTION);
-                if (regExp.CLASS.test(this.text)) this.pushExpectToken(tokenEnum.T_CLASS);
-
-                let lastExpectToken = this.expectTokenStack[this.expectTokenStack.length - 1];
-
-                if (lastExpectToken == tokenEnum.T_FUNCTION || lastExpectToken == tokenEnum.T_CLASS) {
-                    if (regExp.LABEL.test(this.text)) {
-                        this.pushLexerStack(lexerEnum.LABEL);
-                    }
-                }
-
-                this.text = NIL;
-                return;
-            }
-        }
-
-        switch (bit) {
-            case '<':
-                if (this.isState(stateEnum.INITIAL)) this.pushExpectToken(tokenEnum.T_OPEN_TAG);
-                break;
-            case '?':
-                if (this.isState(stateEnum.IN_SCRIPTING)) this.pushExpectToken(tokenEnum.T_CLOSE_TAG);
-                break;
-            case '"':
-                if (this.isState(stateEnum.DOUBLE_QUOTES)) this.popState();
-                else if (this.isState(stateEnum.IN_SCRIPTING)) this.setState(stateEnum.DOUBLE_QUOTES);
-                break;
-            case '(':
-                if (this.isNotState(stateEnum.INITIAL)) {
-                    if (regExp.LABEL.test(this.text)) this.pushLexerStack(lexerEnum.LABEL);
-                    this.setState(stateEnum.VAR_OFFSET);
-                }
-                break;
-            case ')':
-                if (this.isState(stateEnum.VAR_OFFSET)) {
-                    this.popState();
-                    // this.debug(this.text);
-                    this.text = NIL; // ignore
-                    return;
-                }
-                break
-            case '{':
-                this.level++;
-                break;
-            case '}':
-                this.level--;
-                break;
-            default:
-                break;
-        }
-
-        this.text += bit;
-
-        if (this.isState(stateEnum.DOUBLE_QUOTES)) return;
-
-        this.parser();
-    }
-
-    parser() {
-        let bit = this.text.substring(this.text.length - 1);
-        let pos = 0;
-        let len = this.expectTokenStack.length;
         let tmpExpectTokenStack = this.expectTokenStack;
-
-        while (pos <= len) {
-            let pop_expect_stack: boolean = false;
-            switch (this.expectTokenStack[pos]) {
+        tmpExpectTokenStack.forEach((v, i) => {
+            let action: boolean = false;
+            switch (v) {
                 case tokenEnum.T_OPEN_TAG:
                     if (this.text == '<?') {
                         this.setState(stateEnum.IN_SCRIPTING);
                     }
-                    pop_expect_stack = this.text.length > 2;
-                    break;
-                case tokenEnum.T_CLOSE_TAG:
-                    let find = this.text.substr(this.text.lastIndexOf('?'));
-                    if (find == '?>') this.popState();
-                    find = null;
-                    pop_expect_stack = this.text.length > 2;
-                    break;
-                case tokenEnum.T_CLASS:
-                    if (bit == '{') {
-                        let find = this.lexerBackwardLookup(regExp.CLASS);
-                        if (find.length >= 1) {
-                            find.pop();
-                            let item = find.pop();
-                            this.pushCodeSymbols(item, tokenEnum.T_CLASS);
-                        }
-                        pop_expect_stack = true;
+                    if (this.text.length >= 2) {
+                        action = true;
                     }
                     break;
-                case tokenEnum.T_FUNCTION:
-                    if (bit == '(') {
-                        let find = this.lexerBackwardLookup(regExp.FUNCTION);
-                        if (find.length >= 2) {
-                            let item = find[find.length - 2];
-                            this.pushCodeSymbols(item, tokenEnum.T_FUNCTION);
-                        }
-                        pop_expect_stack = true;
+                case tokenEnum.T_CLOSE_TAG:
+                    if (this.text == '?>') {
+                        this.setState(stateEnum.INITIAL);
+                    }
+                    if (this.text.length >= 2) {
+                        action = true;
                     }
                     break;
                 default:
                     break;
             }
-            if (pop_expect_stack) {
-                tmpExpectTokenStack = tmpExpectTokenStack.splice(pos + 1, 1);
+            if (action) {
+                this.expectTokenStack = tmpExpectTokenStack.splice(i + 1, 1);
             }
-            pos++;
-        } // while
+        });
 
-        this.expectTokenStack = tmpExpectTokenStack;
-        tmpExpectTokenStack = null;
-    }
-
-    lexerBackwardLookup(regexp: RegExp): lexer[] {
-        let len = this.lexerStack.length - 1;
-        let pos = len;
-        let ret = [];
-        while (pos > 0) {
-            let item = this.lexerStack[pos];
-            ret.push(item);
-            if (regexp.test(item.text)) {
-                break;
+        if (regExp.TOKENS.test(bit)) {
+            switch (bit) {
+                case '<':
+                    if (this.isState(stateEnum.INITIAL)) this.pushExpectToken(tokenEnum.T_OPEN_TAG);
+                    break;
+                case '?':
+                    if (this.isState(stateEnum.IN_SCRIPTING)) this.pushExpectToken(tokenEnum.T_CLOSE_TAG);
+                    break;
+                case '{':
+                case '}':
+                case '(':
+                    if (this.isState(stateEnum.IN_SCRIPTING)) {
+                        if (regExp.LABEL.test(this.text)) {
+                            this.pushLexerStack(lexerEnum.LABEL);
+                        } else {
+                            let token = this.expectTokenStack[this.expectTokenStack.length - 1];
+                            if (token == tokenEnum.T_FUNCTION) {
+                                this.expectTokenStack.pop();
+                            }
+                        }
+                        bit = '';
+                        this.text = NIL;
+                    }
+                    break;
+                default:
+                    break;
             }
-            pos--;
         }
-        return ret;
+
+        if (regExp.WHITESPACE.test(bit)) {
+            if (regExp.LABEL.test(this.text)) {
+                this.pushLexerStack(lexerEnum.LABEL);
+                this.text = NIL;
+            }
+        } else {
+            this.text += bit;
+        }
+
+        if (regExp.NEWLINE.test(bit)) {
+            this.lineNo++;
+            this.column = 0;
+            this.text = NIL;
+        }
     }
 
 }

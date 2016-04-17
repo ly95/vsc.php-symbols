@@ -2,7 +2,7 @@
     "name": "php-symbols",
     "displayName": "PHP Symbols",
     "description": "support php symbols",
-    "version": "0.0.4",
+    "version": "0.1.0",
     "publisher": "linyang95",
     "author": "Yang Lin",
     "license": "SEE LICENSE IN LICENSE.md",

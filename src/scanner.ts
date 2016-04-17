@@ -265,7 +265,7 @@ export class Scanner {
             this.text += bit;
         }
 
-        if (regExp.NEWLINE.test(bit)) {
+        if (/\n/.test(bit)) {
             this.lineNo++;
             this.column = 0;
             this.text = NIL;

@@ -8,10 +8,9 @@ import * as vscode from 'vscode';
 import {Scanner, tokenEnum} from './scanner';
 
 class PHPDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
-    public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+    public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {        
         return new Promise(function (resolve) {
-            let uri = vscode.Uri.parse(document.uri.toString());
-            new Scanner(uri.path, (sombols) => {
+            new Scanner(document.fileName, (sombols) => {
                 let data: vscode.SymbolInformation[] = [];
                 for (let index = 0; index < sombols.length; index++) {
                     let item = sombols[index];

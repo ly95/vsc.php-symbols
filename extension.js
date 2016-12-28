@@ -192,6 +192,9 @@ function check_condition() {
                     if (loop_compare_char("echo")) {
                         return RETURN_TOKEN("T_ECHO");
                     }
+                    if (loop_compare_char("extends")) {
+                        return RETURN_TOKEN("T_EXTENDS");
+                    }
                     break;
                 case "?":
                     var point = yy_cursor_pos;

@@ -70,9 +70,6 @@ var YYCH = function(i) {
     }
     return yych;
 }
-var YYFILL = function (n) {
-    yy_limit = yy_limit + n;
-};
 var STATE = function (state) {
     return "yyc" + state;
 };
@@ -184,19 +181,22 @@ function check_condition() {
                     break;
                 case "c":
                     yy_marker = yy_cursor_pos;
-                    if (loop_compare_char("class")) {
+                    if (loop_compare_char("class ")) {
+                        yy_cursor_pos--;
                         return RETURN_TOKEN("T_CLASS");
                     }
                     break;
                 case "f":
                     yy_marker = yy_cursor_pos;
-                    if (loop_compare_char("function")) {
+                    if (loop_compare_char("function ")) {
+                        yy_cursor_pos--;
                         return RETURN_TOKEN("T_FUNCTION");
                     }
                     break;
                 case "t":
                     yy_marker = yy_cursor_pos;
-                    if (loop_compare_char("trait")) {
+                    if (loop_compare_char("trait ")) {
+                        yy_cursor_pos--;
                         return RETURN_TOKEN("T_CLASS");
                     }
                     break;
@@ -214,7 +214,8 @@ function check_condition() {
                     if (loop_compare_char("implements")) {
                         return RETURN_TOKEN("T_IMPLEMENTS");
                     }
-                    if (loop_compare_char("interface")) {
+                    if (loop_compare_char("interface ")) {
+                        yy_cursor_pos--;
                         return RETURN_TOKEN("T_INTRTFACE");
                     }
                     break;

@@ -36,7 +36,7 @@ var token_list = [];
 var loop_compare_char = function (obj) {
     var tmp = obj.split("");
     for (var i = 0; i < tmp.length; i++) {
-        if (yy_cursor[yy_cursor_pos] != obj[i]) {
+        if (YYCH(yy_cursor_pos) != obj[i]) {
             if (i > 0) {
                 yy_cursor_pos = yy_marker;
             }
@@ -63,6 +63,13 @@ var loop_in_range_char = function (regexp) {
     return cnt > 0;
 };
 
+var YYCH = function(i) {
+    var yych = yy_cursor[i];
+    if (typeof yych == 'string') {
+        yych = yych.toLowerCase();
+    }
+    return yych;
+}
 var YYFILL = function (n) {
     yy_limit = yy_limit + n;
 };
@@ -102,7 +109,7 @@ function initGValue() {
 }
 
 function check_condition() {
-    var yych = yy_cursor[yy_cursor_pos];
+    var yych = YYCH(yy_cursor_pos);
 
     // check new line.
     if(/\n/.test(yych)) {
@@ -187,6 +194,12 @@ function check_condition() {
                         return RETURN_TOKEN("T_FUNCTION");
                     }
                     break;
+                case "t":
+                    yy_marker = yy_cursor_pos;
+                    if (loop_compare_char("trait")) {
+                        return RETURN_TOKEN("T_CLASS");
+                    }
+                    break;
                 case "e":
                     yy_marker = yy_cursor_pos;
                     if (loop_compare_char("echo")) {
@@ -194,6 +207,15 @@ function check_condition() {
                     }
                     if (loop_compare_char("extends")) {
                         return RETURN_TOKEN("T_EXTENDS");
+                    }
+                    break;
+                case "i":
+                    yy_marker = yy_cursor_pos;
+                    if (loop_compare_char("implements")) {
+                        return RETURN_TOKEN("T_IMPLEMENTS");
+                    }
+                    if (loop_compare_char("interface")) {
+                        return RETURN_TOKEN("T_INTRTFACE");
                     }
                     break;
                 case "?":
@@ -261,7 +283,7 @@ function analyst(code) {
                 'type': '',
                 'range': [-1,-1,-1,-1]
             };
-            if (token_list[i]['token'] == 'T_FUNCTION' || token_list[i]['token'] == 'T_CLASS') {
+            if (token_list[i]['token'] == 'T_FUNCTION' || token_list[i]['token'] == 'T_CLASS' || token_list[i]['token'] == 'T_INTRTFACE') {
                 item.type = token_list[i]['token'];
                 i++;
                 while(i < token_list.length) {
@@ -285,7 +307,9 @@ function analyst(code) {
                     item.text += token_list[i]['context'].trim();
                     i++;
                 }
-                symbols.push(item);
+                if (item.range[0] > 0 && item.range[1] > 0 && item.range[2] > 0 && item.range[3] > 0) {
+                    symbols.push(item);
+                }
             }
             i++;
         }
@@ -320,6 +344,8 @@ var PHPDocumentSymbolProvider = (function () {
                             type = vscode.SymbolKind.Class;
                         } else if (element.type == 'T_FUNCTION') {
                             type = vscode.SymbolKind.Function;
+                        } else if (element.type == 'T_INTRTFACE') {
+                            type = vscode.SymbolKind.Interface;
                         }
 
                         if (type == null) {

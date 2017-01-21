@@ -26,7 +26,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 var yy_state = "";
 var yy_cursor = "";
-var yy_limit = 0;
 var yy_marker = 0;
 var yy_cursor_pos = 0;
 var yy_cursor_line = 1;
@@ -97,7 +96,6 @@ var RETURN_TOKEN = function (token) {
 function initGValue() {
     yy_state = "";
     yy_cursor = "";
-    yy_limit = 0;
     yy_marker = 1;
     yy_cursor_pos = 0;
     yy_cursor_line = 1;
@@ -142,6 +140,30 @@ function check_condition() {
                 }
             }
             break;
+        case "yycST_IN_BRACKET":
+            if (yych == ")") {
+                yy_marker = yy_cursor_pos;
+                yy_cursor_pos++;
+                BEGIN("ST_IN_SCRIPTING");
+                return RETURN_TOKEN("T_TAG_BRACKET_END");
+            }
+            break;
+        case "yycST_IN_QUOTE":
+            if (yych == "'") {
+                yy_marker = yy_cursor_pos;
+                yy_cursor_pos++;
+                BEGIN("ST_IN_SCRIPTING");
+                return RETURN_TOKEN("T_TAG_QUOTE_END");
+            }
+            break;
+        case "yycST_IN_DQUOTE":
+            if (yych == '"') {
+                yy_marker = yy_cursor_pos;
+                yy_cursor_pos++;
+                BEGIN("ST_IN_SCRIPTING");
+                return RETURN_TOKEN("T_TAG_DQUOTE_END");
+            }
+            break;
         case "yycST_IN_SCRIPTING":
             if (/\t/.test(yych)) {
                 yych = " ";
@@ -152,9 +174,20 @@ function check_condition() {
                     yy_marker = yy_cursor_pos;
                     yy_cursor_pos++;
                     return RETURN_TOKEN("T_TAG_BRACKET");
+                case '"':
+                    yy_marker = yy_cursor_pos;
+                    yy_cursor_pos++;
+                    BEGIN("ST_IN_DQUOTE");
+                    return RETURN_TOKEN("T_TAG_DQUOTE");
+                case "'":
+                    yy_marker = yy_cursor_pos;
+                    yy_cursor_pos++;
+                    BEGIN("ST_IN_QUOTE");
+                    return RETURN_TOKEN("T_TAG_QUOTE");
                 case "(":
                     yy_marker = yy_cursor_pos;
                     yy_cursor_pos++;
+                    BEGIN("ST_IN_BRACKET");
                     return RETURN_TOKEN("T_TAG_BRACKET");
                 case ")":
                     yy_marker = yy_cursor_pos;

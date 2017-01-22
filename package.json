@@ -1,40 +1,43 @@
 {
-    "name": "php-symbols",
-    "displayName": "PHP Symbols",
-    "description": "support php symbols",
-    "version": "2.0.4",
-    "publisher": "linyang95",
-    "author": "Yang Lin",
-    "license": "SEE LICENSE IN LICENSE.md",
-    "homepage": "https://github.com/ly95/vsc.php-symbols",
-    "icon": "images/icon.svg",
-    "bugs": {
-        "url": "https://github.com/ly95/vsc.php-symbols/issues",
-        "email": "linyang95@aol.com"
-    },
-    "engines": {
-        "vscode": "^1.5.0"
-    },
-    "categories": [
-        "Languages"
-    ],
-    "keywords": [
-        "symbols",
-        "php"
-    ],
-    "activationEvents": [
-        "onLanguage:php"
-    ],
-    "main": "./extension",
-    "scripts": {
-        "postinstall": "node ./node_modules/vscode/bin/install"
-    },
-    "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
-        "mocha": "^2.3.3",
-        "eslint": "^3.6.0",
-        "@types/node": "^6.0.40",
-        "@types/mocha": "^2.2.32"
-    }
+  "name": "php-symbols",
+  "displayName": "PHP Symbols",
+  "description": "support php symbols",
+  "version": "2.1.0",
+  "publisher": "linyang95",
+  "author": "Yang Lin",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/ly95/vsc.php-symbols",
+  "icon": "images/icon.svg",
+  "bugs": {
+    "url": "https://github.com/ly95/vsc.php-symbols/issues",
+    "email": "linyang95@aol.com"
+  },
+  "engines": {
+    "vscode": "^1.5.0"
+  },
+  "categories": [
+    "Languages"
+  ],
+  "keywords": [
+    "symbols",
+    "php"
+  ],
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./extension",
+  "scripts": {
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "typescript": "^2.0.3",
+    "vscode": "^1.0.0",
+    "mocha": "^2.3.3",
+    "eslint": "^3.6.0",
+    "@types/node": "^6.0.40",
+    "@types/mocha": "^2.2.32"
+  },
+  "dependencies": {
+    "php-parser": "^1.0.4"
+  }
 }
